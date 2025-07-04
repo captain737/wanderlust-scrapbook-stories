@@ -1,6 +1,6 @@
-
 import { Card } from '@/components/ui/card';
-import { Book, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Book, Image as ImageIcon, Edit } from 'lucide-react';
 
 interface JournalEntry {
   id: string;
@@ -14,9 +14,10 @@ interface JournalEntry {
 interface JournalGalleryProps {
   entries: JournalEntry[];
   isVisible: boolean;
+  onEditEntry: (entry: JournalEntry) => void;
 }
 
-const JournalGallery = ({ entries, isVisible }: JournalGalleryProps) => {
+const JournalGallery = ({ entries, isVisible, onEditEntry }: JournalGalleryProps) => {
   if (!isVisible) return null;
 
   if (entries.length === 0) {
@@ -110,11 +111,11 @@ const JournalGallery = ({ entries, isVisible }: JournalGalleryProps) => {
                 </div>
               )}
 
-              <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
+              <p className="text-gray-700 text-sm leading-relaxed line-clamp-3 mb-4">
                 {entry.content}
               </p>
 
-              <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-sm text-gray-500">
                   {entry.photos.length > 0 && (
                     <span className="inline-flex items-center">
@@ -123,9 +124,15 @@ const JournalGallery = ({ entries, isVisible }: JournalGalleryProps) => {
                     </span>
                   )}
                 </div>
-                <button className="text-purple-600 hover:text-purple-800 text-sm font-medium transition-colors">
-                  Read More
-                </button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEditEntry(entry)}
+                  className="flex items-center hover:bg-purple-50 hover:border-purple-300"
+                >
+                  <Edit size={16} className="mr-1" />
+                  Edit
+                </Button>
               </div>
             </div>
           </Card>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import JournalEditor from '@/components/JournalEditor';
 import JournalGallery from '@/components/JournalGallery';
+import JournalEntryEditor from '@/components/JournalEntryEditor';
 import { useToast } from '@/hooks/use-toast';
 
 interface JournalEntry {
@@ -15,8 +16,9 @@ interface JournalEntry {
 }
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'gallery' | 'editor'>('gallery');
+  const [activeView, setActiveView] = useState<'gallery' | 'editor' | 'edit-entry'>('gallery');
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const { toast } = useToast();
 
   const handleNewEntry = () => {
@@ -39,6 +41,40 @@ const Index = () => {
     });
   };
 
+  const handleEditEntry = (entry: JournalEntry) => {
+    setEditingEntry(entry);
+    setActiveView('edit-entry');
+  };
+
+  const handleUpdateEntry = (updatedEntry: JournalEntry) => {
+    setEntries(prev => prev.map(entry => 
+      entry.id === updatedEntry.id ? updatedEntry : entry
+    ));
+    setActiveView('gallery');
+    setEditingEntry(null);
+    
+    toast({
+      title: "Entry Updated! ✨",
+      description: "Your journal entry has been successfully updated.",
+    });
+  };
+
+  const handleDeleteEntry = (entryId: string) => {
+    setEntries(prev => prev.filter(entry => entry.id !== entryId));
+    setActiveView('gallery');
+    setEditingEntry(null);
+    
+    toast({
+      title: "Entry Deleted",
+      description: "Your journal entry has been removed.",
+    });
+  };
+
+  const handleCloseEditor = () => {
+    setActiveView('gallery');
+    setEditingEntry(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header
@@ -56,7 +92,18 @@ const Index = () => {
         <JournalGallery
           entries={entries}
           isVisible={activeView === 'gallery'}
+          onEditEntry={handleEditEntry}
         />
+
+        {editingEntry && (
+          <JournalEntryEditor
+            entry={editingEntry}
+            onSave={handleUpdateEntry}
+            onDelete={handleDeleteEntry}
+            onClose={handleCloseEditor}
+            isVisible={activeView === 'edit-entry'}
+          />
+        )}
       </main>
       
       {/* Welcome Message for First Time Users */}
