@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Save, Plus, Type, Image as ImageIcon, Sticker, Move, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Save, Plus, Type, Image as ImageIcon, Sticker, Move, Trash2, Upload } from 'lucide-react';
 import PhotoUpload from './PhotoUpload';
 
 interface ScrapbookElement {
@@ -19,6 +20,7 @@ interface ScrapbookElement {
     color?: string;
     backgroundColor?: string;
     rotation?: number;
+    isPolaroid?: boolean;
   };
 }
 
@@ -32,7 +34,7 @@ const ScrapbookEditor = ({ onSave, isVisible }: ScrapbookProps) => {
   const [elements, setElements] = useState<ScrapbookElement[]>([]);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [backgroundStyle, setBackgroundStyle] = useState('bg-gradient-to-br from-blue-50 to-purple-50');
-  const [draggedElement, setDraggedElement] = useState<string | null>(null);
+  const [customStickers, setCustomStickers] = useState<string[]>([]);
 
   const backgroundOptions = [
     { name: 'Sky Blue', class: 'bg-gradient-to-br from-blue-50 to-purple-50' },
@@ -44,6 +46,15 @@ const ScrapbookEditor = ({ onSave, isVisible }: ScrapbookProps) => {
   ];
 
   const stickerOptions = ['🌍', '✈️', '📸', '🎒', '🗺️', '🏛️', '🍕', '🎭', '🌅', '🚂', '🏖️', '⭐'];
+  
+  const fontOptions = [
+    'Arial', 'Georgia', 'Times New Roman', 'Helvetica', 'Verdana', 
+    'Comic Sans MS', 'Impact', 'Trebuchet MS', 'Courier New', 'Brush Script MT'
+  ];
+
+  const fontSizes = [12, 16, 20, 24, 28, 32, 40, 48, 56, 72];
+
+  const selectedEl = elements.find(el => el.id === selectedElement);
 
   const addTextElement = () => {
     const newElement: ScrapbookElement = {
@@ -102,15 +113,54 @@ const ScrapbookEditor = ({ onSave, isVisible }: ScrapbookProps) => {
     });
   };
 
+  const handleCustomStickerUpload = (photos: File[]) => {
+    photos.forEach(photo => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          const imageUrl = e.target.result as string;
+          setCustomStickers(prev => [...prev, imageUrl]);
+          
+          // Also add as sticker element
+          const newElement: ScrapbookElement = {
+            id: Date.now().toString() + Math.random(),
+            type: 'sticker',
+            content: imageUrl,
+            x: Math.random() * 400,
+            y: Math.random() * 300,
+            width: 80,
+            height: 80,
+            style: {}
+          };
+          setElements(prev => [...prev, newElement]);
+        }
+      };
+      reader.readAsDataURL(photo);
+    });
+  };
+
   const updateElement = (id: string, updates: Partial<ScrapbookElement>) => {
     setElements(prev => prev.map(el => 
       el.id === id ? { ...el, ...updates } : el
     ));
   };
 
+  const updateElementStyle = (id: string, styleUpdates: Partial<ScrapbookElement['style']>) => {
+    setElements(prev => prev.map(el => 
+      el.id === id ? { ...el, style: { ...el.style, ...styleUpdates } } : el
+    ));
+  };
+
   const deleteElement = (id: string) => {
     setElements(prev => prev.filter(el => el.id !== id));
     setSelectedElement(null);
+  };
+
+  const togglePolaroid = (id: string) => {
+    const element = elements.find(el => el.id === id);
+    if (element && element.type === 'photo') {
+      updateElementStyle(id, { isPolaroid: !element.style.isPolaroid });
+    }
   };
 
   const handleSave = () => {
@@ -163,6 +213,10 @@ const ScrapbookEditor = ({ onSave, isVisible }: ScrapbookProps) => {
                   <p className="text-sm text-gray-600 mb-2">Add Photos</p>
                   <PhotoUpload onPhotosSelected={handlePhotosSelected} />
                 </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">Create Custom Stickers</p>
+                  <PhotoUpload onPhotosSelected={handleCustomStickerUpload} />
+                </div>
               </div>
             </div>
 
@@ -178,8 +232,84 @@ const ScrapbookEditor = ({ onSave, isVisible }: ScrapbookProps) => {
                     {sticker}
                   </button>
                 ))}
+                {customStickers.map((sticker, index) => (
+                  <button
+                    key={`custom-${index}`}
+                    onClick={() => addStickerElement(sticker)}
+                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <img src={sticker} alt="Custom sticker" className="w-8 h-8 object-cover rounded" />
+                  </button>
+                ))}
               </div>
             </div>
+
+            {/* Element Controls */}
+            {selectedEl && (
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-3 text-gray-700">Edit Selected</h3>
+                
+                {selectedEl.type === 'text' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm text-gray-600">Font</label>
+                      <Select 
+                        value={selectedEl.style.fontFamily || 'Arial'} 
+                        onValueChange={(value) => updateElementStyle(selectedEl.id, { fontFamily: value })}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {fontOptions.map(font => (
+                            <SelectItem key={font} value={font}>{font}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm text-gray-600">Size</label>
+                      <Select 
+                        value={String(selectedEl.style.fontSize || 16)} 
+                        onValueChange={(value) => updateElementStyle(selectedEl.id, { fontSize: Number(value) })}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {fontSizes.map(size => (
+                            <SelectItem key={size} value={String(size)}>{size}px</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm text-gray-600">Color</label>
+                      <input
+                        type="color"
+                        value={selectedEl.style.color || '#333333'}
+                        onChange={(e) => updateElementStyle(selectedEl.id, { color: e.target.value })}
+                        className="w-full h-10 rounded border cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {selectedEl.type === 'photo' && (
+                  <div className="space-y-3">
+                    <Button
+                      onClick={() => togglePolaroid(selectedEl.id)}
+                      variant={selectedEl.style.isPolaroid ? "default" : "outline"}
+                      className="w-full"
+                    >
+                      {selectedEl.style.isPolaroid ? 'Remove Polaroid' : 'Make Polaroid'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <h3 className="font-semibold mb-3 text-gray-700">Background</h3>
@@ -263,22 +393,30 @@ const ScrapbookEditor = ({ onSave, isVisible }: ScrapbookProps) => {
                   )}
                   
                   {element.type === 'photo' && (
-                    <img
-                      src={element.content}
-                      alt="Scrapbook element"
-                      className="w-full h-full object-cover rounded-lg shadow-md"
-                      draggable={false}
-                    />
+                    <div className={element.style.isPolaroid ? 'bg-white p-2 pb-6 shadow-lg' : ''}>
+                      <img
+                        src={element.content}
+                        alt="Scrapbook element"
+                        className={`w-full ${element.style.isPolaroid ? 'h-4/5' : 'h-full'} object-cover rounded-lg shadow-md`}
+                        draggable={false}
+                      />
+                      {element.style.isPolaroid && (
+                        <div className="text-center text-xs text-gray-600 mt-1 font-handwriting">
+                          Study Abroad Memory
+                        </div>
+                      )}
+                    </div>
                   )}
                   
                   {element.type === 'sticker' && (
-                    <div
-                      className="w-full h-full flex items-center justify-center"
-                      style={{
-                        fontSize: element.style.fontSize,
-                      }}
-                    >
-                      {element.content}
+                    <div className="w-full h-full flex items-center justify-center">
+                      {element.content.startsWith('data:') ? (
+                        <img src={element.content} alt="Custom sticker" className="w-full h-full object-cover rounded" />
+                      ) : (
+                        <div style={{ fontSize: element.style.fontSize }}>
+                          {element.content}
+                        </div>
+                      )}
                     </div>
                   )}
                   
