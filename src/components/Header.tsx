@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   onNewEntry: () => void;
-  activeView: 'gallery' | 'editor';
-  onViewChange: (view: 'gallery' | 'editor') => void;
+  activeView: 'gallery' | 'editor' | 'edit-entry';
+  onViewChange: (view: 'gallery' | 'editor' | 'edit-entry') => void;
 }
 
 const Header = ({ onNewEntry, activeView, onViewChange }: HeaderProps) => {
@@ -15,7 +15,7 @@ const Header = ({ onNewEntry, activeView, onViewChange }: HeaderProps) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Book className="text-white" size={32} />
-            <h1 className="text-2xl font-bold text-white">Study Abroad Journal</h1>
+            <h1 className="text-2xl font-bold text-white">Study Abroad Scrapbook</h1>
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">
@@ -27,7 +27,7 @@ const Header = ({ onNewEntry, activeView, onViewChange }: HeaderProps) => {
                   : 'text-white hover:bg-white/20'
               }`}
             >
-              Gallery
+              My Scrapbooks
             </button>
             <button
               onClick={() => onViewChange('editor')}
@@ -37,7 +37,7 @@ const Header = ({ onNewEntry, activeView, onViewChange }: HeaderProps) => {
                   : 'text-white hover:bg-white/20'
               }`}
             >
-              Editor
+              Create New
             </button>
           </nav>
 
@@ -46,7 +46,7 @@ const Header = ({ onNewEntry, activeView, onViewChange }: HeaderProps) => {
             className="bg-white text-purple-600 hover:bg-gray-100 font-semibold"
           >
             <Plus size={20} className="mr-2" />
-            New Entry
+            New Scrapbook
           </Button>
         </div>
       </div>
